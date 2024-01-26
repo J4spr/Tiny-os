@@ -7,7 +7,6 @@
 
 use core::panic::PanicInfo;
 
-use x86_64::instructions::hlt;
 pub mod vga_buffer;
 pub mod serial;
 pub mod interrupts;
