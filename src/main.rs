@@ -10,6 +10,9 @@ use alloc::{boxed::Box,rc::Rc};
 use blog_os::println;
 use core::panic::PanicInfo;
 use bootloader::{entry_point, BootInfo};
+use blog_os::task::{Task, simple_executor::SimpleExecutor};
+use blog_os::task::keyboard;
+use blog_os::task::executor::Executor;
 
 entry_point!(kernel_main);
 
@@ -60,11 +63,29 @@ fn kernel_main(boot_info: &'static BootInfo) -> ! {
     let page_ptr: *mut u64 = page.start_address().as_mut_ptr();
     unsafe { page_ptr.offset(400).write_volatile(0x_f021_f077_f065_f04e)};
 
+    let mut executor = Executor::new();
+    executor::spawn(Task::new(example_task()));
+    executor.run();
+
     #[cfg(test)]
     test_main();
 
+    let mut executor = SimpleExecutor::new();
+    executor.spawn(Task::new(example_task()));
+    executor.spawn(Task::new(keyboard::print_keypresses()));
+    executor.run();
+
     println!("It did not crash!");
     blog_os::hlt_loop();
+}
+
+async fn async_number() -> u32 {
+    42
+}
+
+async fn example_task() {
+    let number = async_number().await;
+    println!("async number: {}", number);
 }
 
 /// This function is called on panic.
